@@ -1,0 +1,33 @@
+{
+  "name": "adm_download_manager",
+  "version": "1.0.0",
+  "description": "Downloads current Ableton Live Packs",
+  "main": "adm.sh",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/katywings/adm_download_manager.git"
+  },
+  "author": "Katja Lutz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/katywings/adm_download_manager/issues"
+  },
+  "homepage": "https://github.com/katywings/adm_download_manager#readme",
+  "dependencies": {
+    "cli": "^0.11.1",
+    "config": "^1.19.0",
+    "download": "^4.4.3",
+    "download-status": "^2.2.1",
+    "glob": "^6.0.4",
+    "lodash": "^4.2.1",
+    "moment": "^2.11.2",
+    "path-exists": "^2.1.0",
+    "zombie": "^4.2.1"
+  },
+  "engines": {
+    "node": ">=v0.12.7"
+  }
+}
