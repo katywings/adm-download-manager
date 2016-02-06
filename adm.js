@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
 var _ = require( 'lodash' );
+var os = require('os')
 var path = require('path');
 var pathExists = require('path-exists');
 var fs = require( 'fs' );
 var moment = require('moment');
 var cli = require( 'cli' ).enable( 'help', 'status', 'version', 'glob' );
+var prompt = require('prompt');
 var config = require('config');
 const Browser = require('zombie');
 const browser = new Browser();
@@ -29,36 +31,95 @@ var ableton = {
 };
 
 cli.parse( {
-	username: [ 'u', 'The username of your Ableton account', 'string', '' ]
-	password: [ 'p', 'The password of your Ableton account', 'string', '' ]
+	init: [ 'i', 'Initial launch and setup a new packs file' ]
+	, username: [ 'u', 'The username of your Ableton account', 'string', '' ]
+	, password: [ 'p', 'The password of your Ableton account', 'string', '' ]
 } );
+
+var packsFilePath = 'packs.json';
+var packsBackupFilePath = 'backups/' + moment().format( config.get( 'backupFileTimestamp' ) ) + '_packs.json';
+
+var downloadPacks = function( packs, callback ) {
+	var pack = _.first( packs );
+	if ( pack != undefined ) {
+		var download = new Download();
+		download.use( downloadStatus() );
+		download.dest( config.get( 'downloadPath' ) );
+		download.get( pack.url );
+		download.run( function( err, files ) {
+			if ( err ) {
+				callback.call( err );
+			} else {
+				cli.ok( pack.name + ' (' + pack.version + ') downloaded' );
+				localPackIndex = _.findIndex( localPacks, { id: pack.id } );
+				pack.oldVersion = null;
+				delete pack.oldVersion;
+				if ( localPackIndex == -1 ) {
+					localPacks.push( pack );
+				} else {
+					localPacks[ localPackIndex ] = pack;
+				}
+				savePacksFile( localPacks );
+				downloadPacks( _.tail( packs ), callback );
+			}
+		} );
+	} else {
+		callback.call();
+	}
+};
+
+var packsFileExists = function() {
+	return pathExists.sync( packsFilePath );
+};
+
+var readPacksFile = function() {
+	var localPacks = [];
+	if( packsFileExists() ) {
+		var packsFileContent = fs.readFileSync( packsFilePath, 'utf-8' );
+		if ( packsFileContent.trim() != '' ) {
+			localPacks = JSON.parse( packsFileContent );
+		}
+	}
+	return localPacks;
+};
+
+var savePacksFile = function( packs ) {
+	packs = _.sortBy( packs, [ 'name', 'version' ] );
+	fs.writeFileSync( packsFilePath, JSON.stringify( packs, null, 2 ) );
+	fs.writeFileSync( packsBackupFilePath, JSON.stringify( packs, null, 2 ) );
+};
+
+var localPacks = readPacksFile();
+var allPacks = [];
 
 cli.main( function( args, options ) {
 	var self = this;
 
-	var userName = config.get( 'username' );
+	var username = config.get( 'username' );
 	var password = config.get( 'password' );
 
+	if ( options.username.trim() != '' ) {
+		username = options.username.trim();
+	}
 	if ( options.password.trim() != '' ) {
 		password = options.password.trim();
 	}
-	if ( options.username.trim() != '' ) {
-		password = options.username.trim();
-	}
+
+	self.info( 'Logging in with: "' + username + '" and "' + password + '"' );
 
     browser.visit( ableton.login.url, function() {
-    	browser.fill( ableton.login.username, userName );
+    	browser.fill( ableton.login.username, username );
     	browser.fill( ableton.login.password, password );
     	browser.pressButton( ableton.login.submit, function() {
 	    	if ( browser.location.href.indexOf( ableton.account.url ) == -1 ) {
 	    		self.error( 'Login was not correct' );
 	    		process.exit( 1 );
 	    	} else {
-	    		var localPacks = readPacksFile();
+	    		self.ok( 'Login successful' );
+
+	    		self.info( 'Downloading current packs info' );
+
 	    		var downloads = browser.querySelectorAll( ableton.account.downloadItems );
-	    		var allPacks = {};
-	    		var oldPacks = {};
-	    		var oldPacksNames = [];
 	    		_.forEach( downloads, function( elem ) {
 	    			var elemUrl = elem.querySelector( ableton.account.downloadItemButton );
 	    			if( elemUrl != null && elemUrl.getAttribute( 'href' ) != null && elemUrl.getAttribute( 'href' ) != '' ) {
@@ -70,62 +131,83 @@ cli.main( function( args, options ) {
 	    					key = fileNameRegex[ 1 ];
 	    					version = fileNameRegex[ 2 ];
 	    				}
-		    			allPacks[ key ] = {
-		    				name: browser.text( ableton.account.downloadItemName, elem )
+		    			allPacks.push( {
+		    				id: key
+		    				, name: browser.text( ableton.account.downloadItemName, elem )
 		    				, url: url
 		    				, version: version
-		    			};
-	    			}
-	    		} );
-	    		_.forEach( allPacks, function( pack, packKey ) {
-	    			if ( localPacks[ packKey ] == null || localPacks[ packKey ].version != pack.version ) {
-	    				oldPacks[ packKey ] = pack;
-	    				oldPacksNames.push( pack.name );
+		    			}) ;
 	    			}
 	    		} );
 
-	    		if ( oldPacks.length != 0 ) {
-	    			var download = new Download();
-	    			download.dest( config.get( 'downloadPath' ) );
-	    			download.use( downloadStatus() );
-	    			_.forEach( oldPacks, function( pack ) {
-	    				download.get( pack.url );
-	    			} );
-	    			download.run( function( err, files ) {
-	    				if ( err ) {
-	    					self.error( err );
-	    					self.error( files );
-	    					process.exit( 1 );
-	    				} else {
-	    					self.ok( 'Downloaded new versions' );
-	    					fs.writeFileSync( JSON.stringify( allPacks ) );
-	    					process.exit( 0 );
-	    				}
+	    		if ( options.init === true ) {
+	    			var msg = 'Packs file gonna be initialised, press <enter> to start';
+	    			if ( packsFileExists() ) {
+	    				msg = 'Packs file does already exist, press <enter> to overwrite';
+	    			}
+	    			self.info( msg );
+	    			prompt.start();
+	    			prompt.get( [ 'enter' ], function( err, result ) {
+	    				if( result == undefined ) process.exit( 0 );
+	    				savePacksFile( allPacks );
+	    				self.info( 'NOW open packs.json and DELETE all PACKS WHICH you want TO DOWNLOAD' );
+	    				prompt.get( [ 'enter' ], function( err, result ) {
+	    					if( result == undefined ) process.exit( 0 );
+	    					localPacks = readPacksFile();
+	    					afterInit();
+	    				} );
 	    			} );
 	    		} else {
-	    			self.ok( 'Everything up to date');
-	    			process.exit( 0 );
+	    			afterInit();
 	    		}
-	    		//console.log( oldPacks );
 	    	}
-    	});
-    } );
+		} );
+	} );
 } );
 
+var afterInit = function() {
+	cli.info( 'Comparing local with online available packs' );
 
-var packsFilePath = 'packs.json';
-var packsBackupFilePath = 'backups/' + moment().format( config.get( 'backupFileTimestamp' ) ) + '_packs.json';
+	var oldPacks = [];
+	_.forEach( allPacks, function( pack ) {
+		var localPack = _.find( localPacks, { id: pack.id } );
+		if ( localPack == undefined || localPack.version != pack.version ) {
+			if ( localPack != undefined ) pack.oldVersion = localPack.version;
+			oldPacks.push( pack );
+		}
+	} );
 
-var readPacksFile = function() {
-	var localPacks = {};
-	if( pathExists.sync( packsFilePath )) {
-		var packsFileContent = fs.readFileSync( packsFilePath, 'utf-8' );
-		localPacks = JSON.parse( packsFileContent );
+	if ( !_.isEmpty( oldPacks ) ) {
+		oldPacks = _.sortBy( oldPacks, [ 'name', 'version' ] );
+		cli.info( 'Updates available for the following packs:' );
+		_.forEach( oldPacks, function( pack ) {
+			var oldVersionString = '';
+			if ( pack.oldVersion != null ) {
+				oldVersionString = ' (old: ' + pack.oldVersion + ')';
+			}
+			console.log( pack.name + ' (new: ' + pack.version + ')' + oldVersionString );
+		} );
+
+		cli.info( 'Press <enter> to start the downloads!' );
+		prompt.get( [ 'enter' ], function( err, result ) {
+			if( result == undefined ) process.exit( 0 );
+			setInterval( function() {
+				browser.visit( ableton.account.url );
+				console.log( os.EOL );
+				cli.info( 'Session updated' );
+			}, config.get( 'sessionUpdateInterval' ) * 1000 );
+			downloadPacks( oldPacks, function( err ) {
+				if ( err ) {
+					cli.error( err );
+					process.exit( 1 );
+				} else {
+					cli.ok( 'All downloads completed' );
+					process.exit( 0 );
+				}
+			} );
+		} );
+	} else {
+		cli.ok( 'Everything up to date');
+		process.exit( 0 );
 	}
-	return localPacks;
 }
-
-var savePacksFile = function( allPacks ) {
-	fs.writeFileSync( packsFilePath, JSON.stringify( allPacks ) );
-	fs.writeFileSync( packsBackupFilePath, JSON.stringify( allPacks ) );
-};

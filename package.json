@@ -1,7 +1,7 @@
 {
   "name": "adm_download_manager",
   "version": "1.0.0",
-  "description": "Downloads current Ableton Live Packs",
+  "description": "Downloads current Live Packs",
   "main": "adm.sh",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -25,6 +25,7 @@
     "lodash": "^4.2.1",
     "moment": "^2.11.2",
     "path-exists": "^2.1.0",
+    "prompt": "^0.2.14",
     "zombie": "^4.2.1"
   },
   "engines": {

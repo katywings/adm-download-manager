@@ -3,4 +3,5 @@
 	,"downloadPath": "./downloads"
 	,"username": ""
 	,"password": ""
+	,"sessionUpdateInterval": 180
 }
