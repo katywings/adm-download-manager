@@ -1,3 +1,13 @@
+# folders
+downloads/*.alp
+backups/*.json
+
+# config
+config/local.json
+
+# packs file
+packs.json
+
 # Logs
 logs
 *.log
