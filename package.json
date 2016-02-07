@@ -19,8 +19,7 @@
   "dependencies": {
     "cli": "^0.11.1",
     "config": "^1.19.0",
-    "download": "^4.4.3",
-    "download-status": "^2.2.1",
+    "fast-download": "^0.3.6",
     "glob": "^6.0.4",
     "lodash": "^4.2.1",
     "moment": "^2.11.2",

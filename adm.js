@@ -11,8 +11,7 @@ var prompt = require('prompt');
 var config = require('config');
 const Browser = require('zombie');
 const browser = new Browser();
-var Download = require('download');
-var downloadStatus = require('download-status');
+var FastDownload = require('fast-download');
 
 var ableton = {
 	login: {
@@ -42,26 +41,25 @@ var packsBackupFilePath = 'backups/' + moment().format( config.get( 'backupFileT
 var downloadPacks = function( packs, callback ) {
 	var pack = _.first( packs );
 	if ( pack != undefined ) {
-		var download = new Download();
-		download.use( downloadStatus() );
-		download.dest( config.get( 'downloadPath' ) );
-		download.get( pack.url );
-		download.run( function( err, files ) {
-			if ( err ) {
-				callback.call( err );
+		cli.info( 'Start downloading ' + pack.name + ' (' + pack.version + ')' );
+		var dl = new FastDownload( pack.url, {
+			destFile: config.get( 'downloadPath' ) + path.basename( pack.url )
+		} );
+		dl.on('end', function(){
+			cli.ok( pack.name + ' (' + pack.version + ') downloaded' );
+			localPackIndex = _.findIndex( localPacks, { id: pack.id } );
+			pack.oldVersion = null;
+			delete pack.oldVersion;
+			if ( localPackIndex == -1 ) {
+				localPacks.push( pack );
 			} else {
-				cli.ok( pack.name + ' (' + pack.version + ') downloaded' );
-				localPackIndex = _.findIndex( localPacks, { id: pack.id } );
-				pack.oldVersion = null;
-				delete pack.oldVersion;
-				if ( localPackIndex == -1 ) {
-					localPacks.push( pack );
-				} else {
-					localPacks[ localPackIndex ] = pack;
-				}
-				savePacksFile( localPacks );
-				downloadPacks( _.tail( packs ), callback );
+				localPacks[ localPackIndex ] = pack;
 			}
+			savePacksFile( localPacks );
+			downloadPacks( _.tail( packs ), callback );
+		} );
+		dl.on( 'error', function( err ) {
+			callback.call( this, err );
 		} );
 	} else {
 		callback.call();
@@ -193,7 +191,6 @@ var afterInit = function() {
 			if( result == undefined ) process.exit( 0 );
 			setInterval( function() {
 				browser.visit( ableton.account.url );
-				console.log( os.EOL );
 				cli.info( 'Session updated' );
 			}, config.get( 'sessionUpdateInterval' ) * 1000 );
 			downloadPacks( oldPacks, function( err ) {

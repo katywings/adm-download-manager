@@ -1,6 +1,6 @@
 {
 	"backupFileTimestamp": "YYYY-MM-DD--HH-mm-ss"
-	,"downloadPath": "./downloads"
+	,"downloadPath": "./downloads/"
 	,"username": ""
 	,"password": ""
 	,"sessionUpdateInterval": 180
