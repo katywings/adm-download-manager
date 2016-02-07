@@ -1,5 +1,5 @@
 # About
-Are you annoyed, that you need to manually download updates of Live Packs. Then ADM is maybe something for you. It will store version info in a local file and download new packs.
+Are you annoyed, that you need to manually download updates of Live Packs? Then ADM is maybe something for you. It will store version info in a local file and download new packs.
 
 However note that this software is not created by Ableton AG and has nothing to do with Ableton AG. Ableton AG is not responsible for this software. Also read the LICENSE.
 
