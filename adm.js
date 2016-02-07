@@ -20,12 +20,18 @@ var ableton = {
 		, password: '#id_password'
 		, submit: '.test-login-form .form__submit input[type="submit"]'
 	}
+	, downloadFileNameRegex: /(.*?)_(.*?v.*?)\.alp/
 	, account: {
 		url: "/account/"
 		, downloadItems: ".downloads .downloads__item"
 		, downloadItemName: ".downloads__item__description__title"
 		, downloadItemButton: "a.js-download-button"
-		, downloadFileNameRegex: /(.*?)_(.*?v.*?)\.alp/
+	}
+	, packs: {
+		url: "https://www.ableton.com/packs/"
+		, downloadItems: ".packs-wrapper .test-pack"
+		, downloadItemName: ".pack-teaser__title a.test-pack-detail"
+		, downloadItemButton: "a.js-download-button"
 	}
 };
 
@@ -41,9 +47,15 @@ var packsBackupFilePath = 'backups/' + moment().format( config.get( 'backupFileT
 var downloadPacks = function( packs, callback ) {
 	var pack = _.first( packs );
 	if ( pack != undefined ) {
+		var filePath = config.get( 'downloadPath' ) + path.basename( pack.url );
+		if ( pathExists.sync( filePath ) ) {
+			cli.info( 'Removed old file "' + filePath + '"' );
+			fs.unlink ( filePath );
+		}
 		cli.info( 'Start downloading ' + pack.name + ' (' + pack.version + ')' );
 		var dl = new FastDownload( pack.url, {
-			destFile: config.get( 'downloadPath' ) + path.basename( pack.url )
+			destFile: filePath
+			, timeout: config.get( 'downloadTimeout' )
 		} );
 		dl.on('end', function(){
 			cli.ok( pack.name + ' (' + pack.version + ') downloaded' );
@@ -90,6 +102,31 @@ var savePacksFile = function( packs ) {
 var localPacks = readPacksFile();
 var allPacks = [];
 
+var analyseDownloads = function( downloads, context ) {
+	_.forEach( downloads, function( elem ) {
+		var elemUrl = elem.querySelector( context.downloadItemButton );
+		if( elemUrl != null && elemUrl.getAttribute( 'href' ) != null && elemUrl.getAttribute( 'href' ) != '' ) {
+			var url = elemUrl.getAttribute( 'href' );
+			var fileNameRegex = ableton.downloadFileNameRegex.exec( path.basename( url ) );
+			var version = '';
+			var key = _.uniqueId();
+			if ( fileNameRegex != null ) {
+				key = fileNameRegex[ 1 ];
+				version = fileNameRegex[ 2 ];
+			}
+			var pack = _.find( allPacks, { id: key } );
+			if ( pack == undefined ) {
+				allPacks.push( {
+					id: key
+					, name: browser.text( context.downloadItemName, elem )
+					, url: url
+					, version: version
+				}) ;
+			}
+		}
+	} );
+};
+
 cli.main( function( args, options ) {
 	var self = this;
 
@@ -118,46 +155,33 @@ cli.main( function( args, options ) {
 	    		self.info( 'Downloading current packs info' );
 
 	    		var downloads = browser.querySelectorAll( ableton.account.downloadItems );
-	    		_.forEach( downloads, function( elem ) {
-	    			var elemUrl = elem.querySelector( ableton.account.downloadItemButton );
-	    			if( elemUrl != null && elemUrl.getAttribute( 'href' ) != null && elemUrl.getAttribute( 'href' ) != '' ) {
-	    				var url = elemUrl.getAttribute( 'href' );
-	    				var fileNameRegex = ableton.account.downloadFileNameRegex.exec( path.basename( url ) );
-	    				var version = '';
-	    				var key = _.uniqueId();
-	    				if ( fileNameRegex != null ) {
-	    					key = fileNameRegex[ 1 ];
-	    					version = fileNameRegex[ 2 ];
-	    				}
-		    			allPacks.push( {
-		    				id: key
-		    				, name: browser.text( ableton.account.downloadItemName, elem )
-		    				, url: url
-		    				, version: version
-		    			}) ;
-	    			}
-	    		} );
+	    		analyseDownloads( downloads, ableton.account );
 
-	    		if ( options.init === true ) {
-	    			var msg = 'Packs file gonna be initialised, press <enter> to start';
-	    			if ( packsFileExists() ) {
-	    				msg = 'Packs file does already exist, press <enter> to overwrite';
-	    			}
-	    			self.info( msg );
-	    			prompt.start();
-	    			prompt.get( [ 'enter' ], function( err, result ) {
-	    				if( result == undefined ) process.exit( 0 );
-	    				savePacksFile( allPacks );
-	    				self.info( 'NOW open packs.json and DELETE all PACKS WHICH you want TO DOWNLOAD' );
-	    				prompt.get( [ 'enter' ], function( err, result ) {
-	    					if( result == undefined ) process.exit( 0 );
-	    					localPacks = readPacksFile();
-	    					afterInit();
-	    				} );
-	    			} );
-	    		} else {
-	    			afterInit();
-	    		}
+	    		browser.visit( ableton.packs.url, function() {
+	    			var downloads = browser.querySelectorAll( ableton.packs.downloadItems );
+	    			analyseDownloads( downloads, ableton.packs );
+
+	    			if ( options.init === true ) {
+		    			var msg = 'Packs file gonna be initialised, press <enter> to start';
+		    			if ( packsFileExists() ) {
+		    				msg = 'Packs file does already exist, press <enter> to overwrite';
+		    			}
+		    			self.info( msg );
+		    			prompt.start();
+		    			prompt.get( [ 'enter' ], function( err, result ) {
+		    				if( result == undefined ) process.exit( 0 );
+		    				savePacksFile( allPacks );
+		    				self.info( 'NOW open packs.json and DELETE all PACKS WHICH you want TO DOWNLOAD' );
+		    				prompt.get( [ 'enter' ], function( err, result ) {
+		    					if( result == undefined ) process.exit( 0 );
+		    					localPacks = readPacksFile();
+		    					afterInit();
+		    				} );
+		    			} );
+		    		} else {
+		    			afterInit();
+		    		}
+	    		} );
 	    	}
 		} );
 	} );
