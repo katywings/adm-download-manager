@@ -1,7 +1,7 @@
 {
 	"backupFileTimestamp": "YYYY-MM-DD--HH-mm-ss"
 	,"downloadPath": "./downloads/"
-	,"downloadTimeout": 2000
+	,"downloadTimeout": 10000
 	,"username": ""
 	,"password": ""
 	,"sessionUpdateInterval": 180

@@ -55,6 +55,7 @@ var downloadPacks = function( packs, callback ) {
 		cli.info( 'Start downloading ' + pack.name + ' (' + pack.version + ')' );
 		var dl = new FastDownload( pack.url, {
 			destFile: filePath
+			, chunksAtOnce: 1
 			, timeout: config.get( 'downloadTimeout' )
 		} );
 		dl.on('end', function(){
