@@ -11,7 +11,7 @@ var prompt = require('prompt');
 var config = require('config');
 const Browser = require('zombie');
 const browser = new Browser();
-var FastDownload = require('fast-download');
+var request = require('request');
 
 var ableton = {
 	login: {
@@ -50,15 +50,15 @@ var downloadPacks = function( packs, callback ) {
 		var filePath = config.get( 'downloadPath' ) + path.basename( pack.url );
 		if ( pathExists.sync( filePath ) ) {
 			cli.info( 'Removed old file "' + filePath + '"' );
-			fs.unlink ( filePath );
+			fs.unlinkSync( filePath );
 		}
 		cli.info( 'Start downloading ' + pack.name + ' (' + pack.version + ')' );
-		var dl = new FastDownload( pack.url, {
-			destFile: filePath
-			, chunksAtOnce: 1
+		var stream = new request( {
+			url: pack.url
 			, timeout: config.get( 'downloadTimeout' )
 		} );
-		dl.on('end', function(){
+		var writeStream = fs.createWriteStream( filePath );
+		stream.on( 'end', function() {
 			cli.ok( pack.name + ' (' + pack.version + ') downloaded' );
 			localPackIndex = _.findIndex( localPacks, { id: pack.id } );
 			pack.oldVersion = null;
@@ -71,9 +71,10 @@ var downloadPacks = function( packs, callback ) {
 			savePacksFile( localPacks );
 			downloadPacks( _.tail( packs ), callback );
 		} );
-		dl.on( 'error', function( err ) {
+		stream.on( 'error', function( err ) {
 			callback.call( this, err );
 		} );
+		stream.pipe( writeStream );
 	} else {
 		callback.call();
 	}
@@ -95,7 +96,14 @@ var readPacksFile = function() {
 };
 
 var savePacksFile = function( packs ) {
-	packs = _.sortBy( packs, [ 'name', 'version' ] );
+	_.forEach( packs, function( elem ) {
+		elem.idLower = elem.id.toLowerCase();
+	} );
+	packs = _.sortBy( packs, [ 'idLower' ] );
+	_.forEach( packs, function( elem ) {
+		elem.idLower = null;
+		delete elem.idLower;
+	} );
 	fs.writeFileSync( packsFilePath, JSON.stringify( packs, null, 2 ) );
 	fs.writeFileSync( packsBackupFilePath, JSON.stringify( packs, null, 2 ) );
 };

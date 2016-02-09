@@ -32,6 +32,23 @@ When you use the command `./adm.sh`, ADM will try to login to ableton.com, downl
 - `-u yourUsernameOrEmail` = Optional parameter to enter your username
 - `-p yourPassword` = Optional parameter to enter your password
 
+# Roadmap
+- Add comments on major code parts
+- Improve ADM initialization process (make it easier for new user)
+- Add download loadbar
+
+# Changelog
+## 1.1
+- Increased default timeout configuration from 2000 to 10000, to reduce the download cancel-rate.
+- Fixed bug: Order of packs in packs.json was not correctly ascending sorted because the pack id has upper and lower case characters.
+- Fixed bug: Some downloaded files were corrupted, switched to an other download method `Request. Couldn't reproduce the problem with this new method.
+
+## 1.0.1
+Added the ability to download the free Ableton Live Packs.
+
+## 1.0
+Basic functionality programmed. Does only download buyed Ableton Live Packs.
+
 # Backups
 You can find backups of old `packs.json` files in the `backups` folder. But be warned: The backups will not include manual changes you did to the packs.json file.
 
