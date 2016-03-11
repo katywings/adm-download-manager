@@ -10,6 +10,7 @@ var cli = require( 'cli' ).enable( 'help', 'status', 'version', 'glob' );
 var prompt = require('prompt');
 var config = require('config');
 const Browser = require('zombie');
+Browser.silent = true;
 const browser = new Browser();
 var request = require('request');
 
@@ -149,7 +150,7 @@ cli.main( function( args, options ) {
 		password = options.password.trim();
 	}
 
-	self.info( 'Logging in with: "' + username + '" and "' + password + '"' );
+	self.info( 'Logging in with: "' + username + '"' );
 
     browser.visit( ableton.login.url, function() {
     	browser.fill( ableton.login.username, username );
