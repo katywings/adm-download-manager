@@ -17,17 +17,20 @@
   },
   "homepage": "https://github.com/katywings/adm_download_manager#readme",
   "dependencies": {
-    "cli": "^0.11.1",
+    "cli": "^1.0.1",
     "config": "^1.19.0",
-    "glob": "^6.0.4",
+    "glob": "^7.1.1",
     "lodash": "^4.2.1",
     "moment": "^2.11.2",
-    "path-exists": "^2.1.0",
-    "prompt": "^0.2.14",
+    "path-exists": "^3.0.0",
+    "prompt": "^1.0.0",
     "request": "^2.69.0",
-    "zombie": "^4.2.1"
+    "zombie": "^5.0.5"
   },
   "engines": {
     "node": ">=v0.12.7"
+  },
+  "devDependencies": {
+    "yarn": "^0.20.3"
   }
 }

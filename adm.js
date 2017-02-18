@@ -116,7 +116,7 @@ var analyseDownloads = function( downloads, context ) {
 	_.forEach( downloads, function( elem ) {
 		var elemUrl = elem.querySelector( context.downloadItemButton );
 		if( elemUrl != null && elemUrl.getAttribute( 'href' ) != null && elemUrl.getAttribute( 'href' ) != '' ) {
-			var url = elemUrl.getAttribute( 'href' );
+			var url = elemUrl.getAttribute( 'data-cdn-link' );
 			var fileNameRegex = ableton.downloadFileNameRegex.exec( path.basename( url ) );
 			var version = '';
 			var key = _.uniqueId();
