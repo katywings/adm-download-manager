@@ -1,5 +1,5 @@
 {
-  "name": "adm_download_manager",
+  "name": "adm-download-manager",
   "version": "1.2.0",
   "description": "Downloads current Live Packs",
   "main": "adm.sh",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/katywings/adm_download_manager.git"
+    "url": "git+https://github.com/katywings/adm-download-manager.git"
   },
   "author": "Katja Lutz",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/katywings/adm_download_manager/issues"
+    "url": "https://github.com/katywings/adm-download-manager/issues"
   },
-  "homepage": "https://github.com/katywings/adm_download_manager#readme",
+  "homepage": "https://github.com/katywings/adm-download-manager#readme",
   "dependencies": {
     "cli": "^1.0.1",
     "config": "^1.19.0",
