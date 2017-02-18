@@ -1,6 +1,6 @@
 {
   "name": "adm-download-manager",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Downloads current Live Packs",
   "main": "adm.sh",
   "scripts": {
