@@ -38,6 +38,12 @@ When you use the command `./adm.sh`, ADM will try to login to ableton.com, downl
 - Add download loadbar
 
 # Changelog
+## 1.2
+- Bug fixed: URL field at ableton.com has changed since 1.1. Switched to new URL field
+
+### Known bugs:
+- There is a very rare case, where a pack is not downloaded completely - without warning about an error. Those incorrect downloads will be detected by Ableton Live while installing... Currently I don't know why this is happening.
+
 ## 1.1
 - Increased default timeout configuration from 2000 to 10000, to reduce the download cancel-rate.
 - Fixed bug: Order of packs in packs.json was not correctly ascending sorted because the pack id has upper and lower case characters.
