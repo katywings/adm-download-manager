@@ -11,7 +11,9 @@ var prompt = require('prompt');
 var config = require('config');
 const Browser = require('zombie');
 Browser.silent = true;
-const browser = new Browser();
+const browser = new Browser({
+    waitDuration: 29*1000
+});
 var request = require('request');
 
 var ableton = {
